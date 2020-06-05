@@ -8,6 +8,7 @@ local screen = require("Screen")
 local paths = require("Paths")
 local text = require("Text")
 local number = require("Number")
+local HWBuffer = require("HWBuffer")
 
 -----------------------------------------------------------------------------------------
 
@@ -228,6 +229,7 @@ local function containerObjectMoveToBack(object)
 end
 
 local function containerObjectRemove(object)
+	object.buffer:destroy()
 	table.remove(object.parent.children, containerObjectIndexOf(object))
 end
 
@@ -276,6 +278,8 @@ local function containerAddChild(container, object, atIndex)
 	object.moveBackward = containerObjectMoveBackward
 	object.remove = containerObjectRemove
 	object.addAnimation = containerObjectAddAnimation
+	object.buffer = HWBuffer(object.width, object.height)
+	object:update()
 
 	local function updateFirstParent(object, firstParent)
 		object.firstParent = firstParent
@@ -301,6 +305,7 @@ end
 local function containerRemoveChildren(container, from, to)
 	from = from or 1
 	for objectIndex = from, to or #container.children do
+		container.children[from].buffer:destroy()
 		table.remove(container.children, from)
 	end
 end
@@ -797,7 +802,12 @@ end
 --------------------------------------------------------------------------------
 
 local function drawPanel(object)
-	screen.drawRectangle(object.x, object.y, object.width, object.height, object.colors.background, 0x0, " ", object.colors.transparency)
+	object.buffer:draw(object.x, object.y, object.width, object.height)
+	return object
+end
+
+local function updatePanel(object)
+	object.buffer:drawRectangle(1, 1, object.width, object.height, object.colors.background, 0x0, " ", object.colors.transparency)
 	return object
 end
 
@@ -809,7 +819,8 @@ function GUI.panel(x, y, width, height, color, transparency)
 		transparency = transparency
 	}
 	object.draw = drawPanel
-	
+	object.update = updatePanel
+
 	return object
 end
 
