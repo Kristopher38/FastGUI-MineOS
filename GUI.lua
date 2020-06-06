@@ -326,8 +326,11 @@ end
 local function containerRemoveChildren(container, from, to)
 	from = from or 1
 	for objectIndex = from, to or #container.children do
-		if object.buffer then
-			container.children[from].buffer:destroy()
+		local toRemove = container.children[from]
+		if toRemove.buffer then
+			toRemove.buffer:destroy()
+		elseif toRemove.children then
+			toRemove:removeChildren()
 		end
 		table.remove(container.children, from)
 	end
@@ -535,6 +538,8 @@ local function workspaceStart(workspace, eventPullTimeout)
 			end
 		end
 	until workspace.needClose
+
+	workspace:removeChildren()
 
 	workspace.needClose = nil
 end
