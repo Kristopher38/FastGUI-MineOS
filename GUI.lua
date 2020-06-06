@@ -174,7 +174,7 @@ local function objectDraw(object)
 end
 
 function GUI.object(x, y, width, height)
-	return {
+	local object = {
 		x = x,
 		y = y,
 		width = width,
@@ -182,6 +182,23 @@ function GUI.object(x, y, width, height)
 		isPointInside = objectIsPointInside,
 		draw = objectDraw
 	}
+	return setmetatable({}, {
+		__newindex = function(t, k, v)
+			local dirty = false
+			if k == "width" then
+				dirty = true
+				object.buffer:resize(v, object.height)
+			elseif k == "height" then
+				dirty = true
+				object.buffer:resize(object.width, v)
+			end
+			object[k] = v
+			if dirty then
+				object:update()
+			end
+		end,
+		__index = object
+	})
 end
 
 --------------------------------------------------------------------------------
@@ -229,7 +246,9 @@ local function containerObjectMoveToBack(object)
 end
 
 local function containerObjectRemove(object)
-	object.buffer:destroy()
+	if object.buffer then
+		object.buffer:destroy()
+	end
 	table.remove(object.parent.children, containerObjectIndexOf(object))
 end
 
@@ -279,7 +298,9 @@ local function containerAddChild(container, object, atIndex)
 	object.remove = containerObjectRemove
 	object.addAnimation = containerObjectAddAnimation
 	object.buffer = HWBuffer(object.width, object.height)
-	object:update()
+	if object.update then
+		object:update()
+	end
 
 	local function updateFirstParent(object, firstParent)
 		object.firstParent = firstParent
@@ -305,7 +326,9 @@ end
 local function containerRemoveChildren(container, from, to)
 	from = from or 1
 	for objectIndex = from, to or #container.children do
-		container.children[from].buffer:destroy()
+		if object.buffer then
+			container.children[from].buffer:destroy()
+		end
 		table.remove(container.children, from)
 	end
 end
@@ -3494,24 +3517,26 @@ end
 --------------------------------------------------------------------------------
 
 local function textUpdate(object)
-	object.width = unicode.len(object.text)
+	object.buffer:drawText(1, 1, object.color, object.text)
 	return object
 end
 
 local function textDraw(object)
-	object:update()
-	screen.drawText(object.x, object.y, object.color, object.text)
+	local newWidth = unicode.len(object.text)
+	if newWidth > object.width then
+		object.buffer:resize(newWidth, object.height)
+	end
+	object.buffer:draw(object.x, object.y, object.width, object.height)
 	return object
 end
 
 function GUI.text(x, y, color, text)
-	local object = GUI.object(x, y, 1, 1)
+	local object = GUI.object(x, y, unicode.len(text), 1)
 
 	object.text = text
 	object.color = color
 	object.update = textUpdate
 	object.draw = textDraw
-	object:update()
 
 	return object
 end

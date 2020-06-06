@@ -64,6 +64,17 @@ function HWBuffer:draw(col, row, width, height, fromCol, fromRow, destination)
     gpu.bitblt(destination, col, row, width, height, self.bufferId, fromCol, fromRow)
 end
 
+function HWBuffer:resize(width, height)
+    if self.width ~= width or self.height ~= height then
+        local newBuffer = gpu.allocateBuffer(width, height)
+        gpu.bitblt(newBuffer, 1, 1, self.width, self.height, self.bufferId)
+        gpu.freeBuffer(self.bufferId)
+        self.bufferId = newBuffer
+        self.width = width
+        self.height = height
+    end
+end
+
 function HWBuffer:destroy()
     gpu.freeBuffer(self.bufferId)
 end
