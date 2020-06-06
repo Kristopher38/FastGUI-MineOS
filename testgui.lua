@@ -10,17 +10,35 @@ screen.setGPUProxy(gpu)
 
 local workspace = GUI.workspace(1, 1, 160, 80)
 local panel = workspace:addChild(GUI.panel(40, 15, 60, 20, 0xcc0000))
+local text = workspace:addChild(GUI.text(1, 49, 0xFFFFFF, "Hello world!"))
 
-local buttonEnd = workspace:addChild(GUI.button(150, 40, 10, 10, 0xFF0000, 0x0, 0x0, 0x0, "ESC"))
+local buttonEnd = workspace:addChild(GUI.button(150, 45, 10, 5, 0xFF0000, 0x0, 0x0, 0x0, "ESC"))
 buttonEnd.onTouch = function()
     workspace:stop()
 end
 
-local button = workspace:addChild(GUI.button(10, 10, 30, 5, 0xFFFFFF, 0x0, 0x000000, 0x0, "Dupsko"))
-
-button.onTouch = function()
+local buttonResize = workspace:addChild(GUI.button(10, 1, 20, 3, 0xFFFFFF, 0x0, 0x000000, 0x0, "Resize"))
+buttonResize.onTouch = function()
     panel.width = panel.width + 1
+end
+
+local buttonChangeColor = workspace:addChild(GUI.button(10, 4, 20, 3, 0xFFFFFF, 0x0, 0x0, 0x0, "Change color"))
+buttonChangeColor.onTouch = function()
+    panel.colors = {background = (panel.colors.background + 0xdeadbeef) % 0xffffff, transparency = 0.5}
+    text.color = (text.color + 0xdeadbeef) % 0xffffff
+end
+
+local buttonChangeText = workspace:addChild(GUI.button(10, 7, 20, 3, 0xFFFFFF, 0x0, 0x0, 0x0, "Change text"))
+buttonChangeText.onTouch = function()
+    text.text = string.rep(unicode.char(math.random(32, 126)), math.random(1, 30))
 end
 
 workspace:draw()
 workspace:start()
+
+-- clear the screen, tell if all buffers were freed and free the remaining ones
+gpu.setBackground(0x0)
+gpu.setForeground(0xFFFFFF)
+gpu.fill(1, 1, 160, 50, " ")
+print(gpu.freeMemory())
+gpu.freeAllBuffers()

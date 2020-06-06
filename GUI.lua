@@ -842,14 +842,29 @@ end
 function GUI.panel(x, y, width, height, color, transparency)
 	local object = GUI.object(x, y, width, height)
 	
-	object.colors = {
+	local objectColors = {
 		background = color,
 		transparency = transparency
 	}
+	object.colors = setmetatable({}, {
+		__newindex = function(t, k, v)
+			objectColors[k] = v
+			object:update()
+		end,
+		__index = objectColors
+	})
 	object.draw = drawPanel
 	object.update = updatePanel
 
-	return object
+	return setmetatable({}, {
+		__newindex = function(t, k, v)
+			object[k] = v
+			if k == "colors" then
+				object:update()
+			end
+		end,
+		__index = object
+	})
 end
 
 --------------------------------------------------------------------------------
@@ -3527,10 +3542,6 @@ local function textUpdate(object)
 end
 
 local function textDraw(object)
-	local newWidth = unicode.len(object.text)
-	if newWidth > object.width then
-		object.buffer:resize(newWidth, object.height)
-	end
 	object.buffer:draw(object.x, object.y, object.width, object.height)
 	return object
 end
@@ -3543,7 +3554,18 @@ function GUI.text(x, y, color, text)
 	object.update = textUpdate
 	object.draw = textDraw
 
-	return object
+	return setmetatable({}, {
+		__newindex = function(t, k, v)
+			object[k] = v
+			if k == "text" then
+				object.width = unicode.len(object.text)
+				object:update()
+			elseif k == "color" then
+				object:update()
+			end
+		end,
+		__index = object
+	})
 end
 
 --------------------------------------------------------------------------------
