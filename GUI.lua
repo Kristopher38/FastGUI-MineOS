@@ -119,6 +119,7 @@ local GUI = {
 
 function GUI.setAlignment(object, horizontalAlignment, verticalAlignment)
 	object.horizontalAlignment, object.verticalAlignment = horizontalAlignment, verticalAlignment
+	object:update()
 	
 	return object
 end
@@ -884,16 +885,40 @@ local function drawLabel(object)
 	return object
 end
 
+local function updateLabel(object)
+
+end
+
 function GUI.label(x, y, width, height, textColor, text)
-	local object = GUI.object(x, y, width, height)
+	local object = GUI.object(x, y, unicode.len(text), 1)
 	
 	object.setAlignment = GUI.setAlignment
 	object:setAlignment(GUI.ALIGNMENT_HORIZONTAL_LEFT, GUI.ALIGNMENT_VERTICAL_TOP)
-	object.colors = {text = textColor}
+	
+	local objectColors = {text = textColor}
+	object.colors =  setmetatable({}, {
+		__newindex = function(t, k, v)
+			objectColors[k] = v
+			object:update()
+		end,
+		__index = objectColors
+	})
 	object.text = text
 	object.draw = drawLabel
+	object.update = updateLabel
 
-	return object
+	return setmetatable({}, {
+		__newindex = function(t, k, v)
+			object[k] = v
+			if k == "text" then
+				object.width = unicode.len(text)
+				object:update()
+			elseif k == "colors" then
+				object:update()
+			end
+		end,
+		__index = object
+	})
 end
 
 --------------------------------------------------------------------------------
