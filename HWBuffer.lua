@@ -1,6 +1,5 @@
 local gpu = require("component").gpu
 
--- Priority queue implemented using binary min heap
 local HWBuffer = {}
 HWBuffer.__index = HWBuffer
 setmetatable(HWBuffer, {__call = function(cls, width, height)
