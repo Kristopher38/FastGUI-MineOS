@@ -32,7 +32,7 @@ local GUI = {
 	IO_MODE_OPEN = 14,
 	IO_MODE_SAVE = 15,
 
-	BUTTON_PRESS_DURATION = 0.2,
+	BUTTON_PRESS_DURATION = 0,
 	BUTTON_ANIMATION_DURATION = 0.2,
 	SWITCH_ANIMATION_DURATION = 0.3,
 	FILESYSTEM_DIALOG_ANIMATION_DURATION = 0.5,
@@ -119,7 +119,7 @@ local GUI = {
 
 function GUI.setAlignment(object, horizontalAlignment, verticalAlignment)
 	object.horizontalAlignment, object.verticalAlignment = horizontalAlignment, verticalAlignment
-	object:update()
+	--object:update()
 	
 	return object
 end
@@ -586,8 +586,8 @@ local function pressableHandlePress(workspace, pressable, ...)
 	workspace:draw()
 
 	if not pressable.switchMode then
-		pressable.pressed = not pressable.pressed
-		event.sleep(GUI.BUTTON_PRESS_DURATION)
+        pressable.pressed = not pressable.pressed
+		os.sleep(GUI.BUTTON_PRESS_DURATION)
 		
 		workspace:draw()
 	end
@@ -757,7 +757,7 @@ local function buttonCreate(x, y, width, height, backgroundColor, textColor, bac
 	local button = pressable(x, y, width, height, backgroundColor, textColor, backgroundPressedColor, textPressedColor, 0x878787, 0xA5A5A5, text)
 
 	button.animationDuration = GUI.BUTTON_ANIMATION_DURATION
-	button.animated = true
+	button.animated = false
 
 	button.animationCurrentBackground = backgroundColor
 	button.animationCurrentText = textColor
@@ -871,7 +871,12 @@ end
 --------------------------------------------------------------------------------
 
 local function drawLabel(object)
-	local xText, yText = GUI.getAlignmentCoordinates(
+    object.buffer:draw(object.x, object.y, object.width, object.height)
+	return object
+end
+
+local function updateLabel(object)
+    local xText, yText = GUI.getAlignmentCoordinates(
 		object.x,
 		object.y,
 		object.width,
@@ -880,20 +885,13 @@ local function drawLabel(object)
 		object.verticalAlignment,
 		unicode.len(object.text),
 		1
-	)
-	screen.drawText(math.floor(xText), math.floor(yText), object.colors.text, object.text)
-	return object
-end
-
-local function updateLabel(object)
-
+    )
+    object.buffer:drawText(xText // 1, yText // 1, object.colors.text, object.text)
+    return object
 end
 
 function GUI.label(x, y, width, height, textColor, text)
 	local object = GUI.object(x, y, unicode.len(text), 1)
-	
-	object.setAlignment = GUI.setAlignment
-	object:setAlignment(GUI.ALIGNMENT_HORIZONTAL_LEFT, GUI.ALIGNMENT_VERTICAL_TOP)
 	
 	local objectColors = {text = textColor}
 	object.colors =  setmetatable({}, {
@@ -905,15 +903,18 @@ function GUI.label(x, y, width, height, textColor, text)
 	})
 	object.text = text
 	object.draw = drawLabel
-	object.update = updateLabel
+    object.update = updateLabel
+    
+    object.setAlignment = GUI.setAlignment
+	object:setAlignment(GUI.ALIGNMENT_HORIZONTAL_LEFT, GUI.ALIGNMENT_VERTICAL_TOP)
 
 	return setmetatable({}, {
 		__newindex = function(t, k, v)
 			object[k] = v
-			if k == "text" then
-				object.width = unicode.len(text)
+            if k == "text" then
+				object.width = unicode.len(v)
 				object:update()
-			elseif k == "colors" then
+            elseif k == "colors" then
 				object:update()
 			end
 		end,
@@ -3116,7 +3117,7 @@ local function autoCompleteEventHandler(workspace, object, e1, e2, e3, e4, e5, .
 		workspace:draw()
 
 		if object.onItemSelected then
-			event.sleep(0.2)
+			os.sleep(0.2)
 			object.onItemSelected(workspace, object, e1, e2, e3, e4, e5, ...)
 		end
 	elseif e1 == "scroll" then
@@ -3918,7 +3919,7 @@ local function dropDownMenuItemEventHandler(workspace, object, e1, ...)
 
 				workspace:draw()
 			else
-				event.sleep(0.2)
+				os.sleep(0.2)
 
 				object.parent.parent.parent:remove()
 				
